@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENstreams</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <section class="hero is-link">
+        <div class="container">
+            <div class="hero-body">
+                <p class="title">ENstreams</p>
+                <p class="subtitle">translate your favorite streams in real-time</p>
+            </div>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column"></div>
+                <div class="column is-half">
+                    <div class="columns">
+                        <input class="input is-primary mr-1" type="text" id="youtubeUrl"
+                            placeholder="Enter YouTube URL">
+                        <button class="button is-primary" onclick="searchYouTube()"><img src="Assets/search.png"
+                                alt=""></button>
+                    </div>
+                </div>
+                <div class="column"></div>
+            </div>
+        </div>
+    </section>
+    
+    <section style="margin-bottom: 200px;">
+        <div class="container">
+            <div class="is-flex is-justify-content-center is-align-content-center" id="videoContainer"></div>
+        </div>
+    </section>
+
+    <script>
+        function searchYouTube() {
+            var url = document.getElementById("youtubeUrl").value;
+            var videoId = getVideoId(url);
+
+            if (videoId) {
+                embedYouTubeVideo(videoId);
+            } else {
+                alert("Invalid YouTube URL");
+            }
+        }
+
+        function getVideoId(url) {
+            var match = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+            return match ? match[1] : null;
+        }
+
+        function embedYouTubeVideo(videoId) {
+            var videoContainer = document.getElementById("videoContainer");
+            videoContainer.innerHTML = `
+                <iframe id="youtubePlayer" width="1280" height="720" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
+            `;
+        }
+
+        function captureAudioFromYouTube(videoId) {
+            // Initialize the YouTube player
+            var tag = document.createElement('script');
+            tag.src = 'https://www.youtube.com/iframe_api';
+            var firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+            // YouTube API script loading callback
+            window.onYouTubeIframeAPIReady = function () {
+                var player = new YT.Player('youtubePlayer', {
+                    events: {
+                        'onReady': function (event) {
+                            // Access the player's audio track
+                            const audioTrack = event.target.getAudioTracks()[0];
+
+                            if (audioTrack) {
+                                // Connect the audio track to the Web Audio API
+                                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                                mediaStreamSource = audioContext.createMediaStreamSource(new MediaStream([audioTrack]));
+                                mediaStreamSource.connect(audioContext.destination);
+                            } else {
+                                console.error('No audio track found for the video.');
+                            }
+                        }
+                    }
+                });
+            };
+        }
+    </script>
+</body>
+
+</html>
